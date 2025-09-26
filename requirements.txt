@@ -1,0 +1,8 @@
+pandas
+dash
+plotly
+psycopg2-binary
+redis
+kafka-python
+fastapi
+uvicorn
