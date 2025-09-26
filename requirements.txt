@@ -6,3 +6,4 @@ redis
 kafka-python
 fastapi
 uvicorn
+gtfs-realtime-bindings

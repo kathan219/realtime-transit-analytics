@@ -3,3 +3,7 @@ __pycache__/
 .env
 db_data/
 .cache/
+.env.*
+.DS_Store
+dist/
+build/
