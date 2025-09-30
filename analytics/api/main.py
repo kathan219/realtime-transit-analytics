@@ -12,6 +12,7 @@ from typing import List, Optional
 import psycopg2
 import redis
 from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel, Field, ValidationError
 from fastapi.responses import JSONResponse
 
 # Import from parent directory
@@ -31,6 +32,9 @@ app = FastAPI(
     description="Real-time transit delay analytics and metrics",
     version="1.0.0"
 )
+
+class HistoryQuery(BaseModel):
+    minutes: int = Field(60, ge=1, le=1440, description="Time window in minutes (1-1440)")
 
 
 @app.get("/")
@@ -153,6 +157,54 @@ async def get_top_late_routes(
         raise HTTPException(status_code=503, detail="Database service unavailable")
     except Exception as e:
         logger.error(f"Error retrieving late routes: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.get("/history/{route_id}")
+async def get_history(
+    route_id: str,
+    minutes: int = Query(60, ge=1, le=1440, description="Time window in minutes (1-1440)")
+) -> List[dict]:
+    """
+    Get historical minute-level metrics for a route from Postgres.
+    Returns rows newer than now() - minutes, sorted by ts ascending.
+    """
+    try:
+        # Validate with Pydantic
+        _ = HistoryQuery(minutes=minutes)
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    try:
+        conn = get_pg_conn()
+        cursor = conn.cursor()
+        query = (
+            "SELECT ts, avg_delay_seconds, ontime_pct, anomalies "
+            "FROM agg_delay_minute "
+            "WHERE route_id = %s AND ts >= NOW() - INTERVAL '%s minutes' "
+            "ORDER BY ts ASC"
+        )
+        cursor.execute(query, (route_id, minutes))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        history = [
+            {
+                "ts": ts.isoformat(),
+                "avg_delay_seconds": float(avg_delay) if avg_delay is not None else None,
+                "ontime_pct": float(ontime) if ontime is not None else None,
+                "anomalies": int(anom) if anom is not None else 0,
+            }
+            for (ts, avg_delay, ontime, anom) in rows
+        ]
+        return history
+    
+    except psycopg2.Error as e:
+        logger.error(f"Postgres error: {e}")
+        raise HTTPException(status_code=503, detail="Database service unavailable")
+    except Exception as e:
+        logger.error(f"Error retrieving history: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 

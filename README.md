@@ -40,3 +40,11 @@ psql "host=localhost port=5434 user=postgres password=postgres dbname=transit" -
 - Add AI summaries and NLQ in `ai/`
 - Extend tests in `tests/`
 
+## Running tests
+
+```bash
+pip install -r requirements.txt
+pytest -q
+```
+
+
