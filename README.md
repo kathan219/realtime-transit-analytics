@@ -47,4 +47,12 @@ pip install -r requirements.txt
 pytest -q
 ```
 
+### Health check
+
+Verify the API and backing stores are healthy:
+
+```bash
+curl -s http://localhost:8000/health | jq
+```
+
 

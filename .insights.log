@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/kathansoni/realtime-transit-analytics/realtime-transit-analytics/ai/insights.py", line 22, in <module>
+    from logging_setup import configure_logging
+ModuleNotFoundError: No module named 'logging_setup'

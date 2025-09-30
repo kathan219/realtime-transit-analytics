@@ -22,9 +22,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from etl.config import POSTGRES_URL, REDIS_URL
 from etl.utils import get_pg_conn, get_redis
+from logging_setup import configure_logging
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
+configure_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
@@ -210,45 +211,35 @@ async def get_history(
 
 @app.get("/health")
 async def health_check():
-    """
-    Comprehensive health check for all dependencies.
-    
-    Returns:
-        Health status of Redis and Postgres connections
-    """
-    health_status = {
-        "api": "healthy",
-        "redis": "unknown",
-        "postgres": "unknown"
-    }
-    
-    # Check Redis
+    """Simple health check that pings Redis and Postgres."""
     try:
         redis_client = get_redis()
         redis_client.ping()
-        health_status["redis"] = "healthy"
-    except Exception as e:
-        health_status["redis"] = f"unhealthy: {str(e)}"
-    
-    # Check Postgres
-    try:
         conn = get_pg_conn()
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1")
-        cursor.close()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
         conn.close()
-        health_status["postgres"] = "healthy"
+        return {"status": "ok"}
     except Exception as e:
-        health_status["postgres"] = f"unhealthy: {str(e)}"
-    
-    # Determine overall health
-    overall_healthy = all(
-        status == "healthy" or status.startswith("healthy")
-        for status in health_status.values()
-    )
-    
-    status_code = 200 if overall_healthy else 503
-    return JSONResponse(content=health_status, status_code=status_code)
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail="unhealthy")
+
+@app.get("/insights")
+async def get_insights() -> dict:
+    """Return latest insights JSON from Redis or empty object."""
+    try:
+        client = get_redis()
+        val = client.get("insights:latest")
+        if not val:
+            return {}
+        try:
+            return json.loads(val)
+        except json.JSONDecodeError:
+            return {}
+    except Exception as e:
+        logger.error(f"Error fetching insights: {e}")
+        return {}
 
 
 if __name__ == "__main__":

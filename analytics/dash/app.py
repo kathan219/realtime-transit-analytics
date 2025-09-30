@@ -40,6 +40,9 @@ app.layout = html.Div([
     html.Div(id="banner", style={"color": "#a00", "marginTop": "8px"}),
     dcc.Graph(id="delay_chart"),
     dcc.Interval(id="interval", interval=15_000, n_intervals=0),
+    html.H3("Insights (last 60 min)"),
+    html.Ul(id="insights_list"),
+    dcc.Interval(id="insights_interval", interval=30_000, n_intervals=0),
 ])
 
 
@@ -64,6 +67,14 @@ def fetch_history(route_id: str, minutes: int = 60):
     except Exception:
         return []
 
+
+def fetch_insights():
+    try:
+        resp = requests.get(f"{API_BASE}/insights", timeout=5)
+        resp.raise_for_status()
+        return resp.json() or {}
+    except Exception:
+        return {}
 
 @app.callback(
     [Output("delay_chart", "figure"), Output("banner", "children")],
@@ -91,7 +102,26 @@ def update_chart(route, source, _):
     return fig, ""
 
 
+@app.callback(
+    Output("insights_list", "children"),
+    [Input("insights_interval", "n_intervals")]
+)
+def update_insights(_):
+    data = fetch_insights()
+    highlights = data.get("highlights") or []
+    if not highlights:
+        return [html.Li("No insights yet.")]
+    items = []
+    for h in highlights[:5]:
+        route = h.get("route") or "?"
+        issue = h.get("issue") or ""
+        severity = h.get("severity") or ""
+        evidence = h.get("evidence") or ""
+        items.append(html.Li(f"[{severity}] Route {route}: {issue} — {evidence}"))
+    return items
+
+
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True)
 
 

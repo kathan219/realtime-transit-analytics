@@ -21,6 +21,7 @@ from kafka.errors import KafkaError
 
 from .config import POSTGRES_URL
 from .utils import get_kafka_consumer, get_pg_conn, get_redis
+from logging_setup import configure_logging
 
 logger = logging.getLogger(__name__)
 
@@ -343,10 +344,7 @@ class WindowedAggregator:
 
 def main():
     """Main entry point for the consumer."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    configure_logging()
     
     aggregator = WindowedAggregator()
     aggregator.start()

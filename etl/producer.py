@@ -19,6 +19,7 @@ import requests
 from google.transit import gtfs_realtime_pb2
 
 from .config import KAFKA_BROKER
+from logging_setup import configure_logging
 from .utils import get_kafka_producer
 
 logger = logging.getLogger(__name__)
@@ -212,10 +213,7 @@ class TransitProducer:
 
 def main():
     """Main entry point for the producer."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    configure_logging()
     
     producer = TransitProducer()
     producer.start()

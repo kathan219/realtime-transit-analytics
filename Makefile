@@ -33,4 +33,7 @@ api:
 dash:
 	python analytics/dash/app.py
 
+streamlit:
+	streamlit run analytics/streamlit/app.py --server.port 8501 --server.address 0.0.0.0
+
 

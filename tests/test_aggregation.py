@@ -19,6 +19,7 @@ def test_compute_metrics_basic():
 
     assert metrics["anomalies"] == 1
     assert abs(metrics["avg_delay_seconds"] - 193.3333) < 0.1
-    assert abs(metrics["ontime_pct"] - 0.5) < 0.01
+    # ontime: 60 and 120 are <= 120 out of 3 valid delays => 2/3 ≈ 0.6667
+    assert abs(metrics["ontime_pct"] - (2/3)) < 0.01
 
 
