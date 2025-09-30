@@ -1,0 +1,205 @@
+"""
+FastAPI analytics API for transit metrics.
+
+Provides endpoints for accessing hot metrics from Redis and historical
+aggregates from Postgres.
+"""
+
+import json
+import logging
+from typing import List, Optional
+
+import psycopg2
+import redis
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import JSONResponse
+
+# Import from parent directory
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+from etl.config import POSTGRES_URL, REDIS_URL
+from etl.utils import get_pg_conn, get_redis
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="Transit Analytics API",
+    description="Real-time transit delay analytics and metrics",
+    version="1.0.0"
+)
+
+
+@app.get("/")
+async def root():
+    """Health check endpoint."""
+    return {"message": "Transit Analytics API", "status": "healthy"}
+
+
+@app.get("/hot/{route_id}")
+async def get_hot_metrics(route_id: str) -> List[dict]:
+    """
+    Get hot metrics for a specific route from Redis.
+    
+    Returns the last 50 entries from Redis list `route:{route_id}`.
+    
+    Args:
+        route_id: Route identifier (e.g., '504', '501')
+        
+    Returns:
+        List of recent metrics for the route
+        
+    Raises:
+        HTTPException: If route not found or Redis error
+    """
+    try:
+        redis_client = get_redis()
+        key = f"route:{route_id}"
+        
+        # Get all entries from the list
+        raw_entries = redis_client.lrange(key, 0, -1)
+        
+        if not raw_entries:
+            raise HTTPException(status_code=404, detail=f"No data found for route {route_id}")
+        
+        # Parse JSON entries
+        metrics = []
+        for entry in raw_entries:
+            try:
+                metric = json.loads(entry)
+                metrics.append(metric)
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse Redis entry: {e}")
+                continue
+        
+        logger.info(f"Retrieved {len(metrics)} hot metrics for route {route_id}")
+        return metrics
+        
+    except redis.ConnectionError as e:
+        logger.error(f"Redis connection error: {e}")
+        raise HTTPException(status_code=503, detail="Redis service unavailable")
+    except Exception as e:
+        logger.error(f"Error retrieving hot metrics: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.get("/top/late")
+async def get_top_late_routes(
+    minutes: int = Query(60, ge=1, le=1440, description="Time window in minutes (1-1440)"),
+    limit: int = Query(10, ge=1, le=100, description="Maximum number of routes to return (1-100)")
+) -> List[dict]:
+    """
+    Get routes with highest average delays in the specified time window.
+    
+    Queries Postgres for average delay and on-time percentage by route,
+    ordered by average delay descending.
+    
+    Args:
+        minutes: Time window in minutes (default: 60, max: 1440)
+        limit: Maximum number of routes to return (default: 10, max: 100)
+        
+    Returns:
+        List of routes with delay statistics
+        
+    Raises:
+        HTTPException: If database error or invalid parameters
+    """
+    try:
+        conn = get_pg_conn()
+        cursor = conn.cursor()
+        
+        # Calculate time window
+        query = """
+        SELECT 
+            route_id,
+            AVG(avg_delay_seconds) as avg_delay,
+            AVG(ontime_pct) as avg_ontime_pct,
+            COUNT(*) as data_points,
+            MAX(ts) as latest_update
+        FROM agg_delay_minute 
+        WHERE ts >= NOW() - INTERVAL '%s minutes'
+        GROUP BY route_id
+        HAVING COUNT(*) > 0
+        ORDER BY avg_delay DESC
+        LIMIT %s
+        """
+        
+        cursor.execute(query, (minutes, limit))
+        results = cursor.fetchall()
+        
+        # Format results
+        routes = []
+        for row in results:
+            route_id, avg_delay, avg_ontime_pct, data_points, latest_update = row
+            routes.append({
+                "route_id": route_id,
+                "avg_delay_seconds": round(float(avg_delay), 1),
+                "avg_ontime_percentage": round(float(avg_ontime_pct), 3),
+                "data_points": data_points,
+                "latest_update": latest_update.isoformat() if latest_update else None
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        logger.info(f"Retrieved top {len(routes)} late routes for last {minutes} minutes")
+        return routes
+        
+    except psycopg2.Error as e:
+        logger.error(f"Postgres error: {e}")
+        raise HTTPException(status_code=503, detail="Database service unavailable")
+    except Exception as e:
+        logger.error(f"Error retrieving late routes: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.get("/health")
+async def health_check():
+    """
+    Comprehensive health check for all dependencies.
+    
+    Returns:
+        Health status of Redis and Postgres connections
+    """
+    health_status = {
+        "api": "healthy",
+        "redis": "unknown",
+        "postgres": "unknown"
+    }
+    
+    # Check Redis
+    try:
+        redis_client = get_redis()
+        redis_client.ping()
+        health_status["redis"] = "healthy"
+    except Exception as e:
+        health_status["redis"] = f"unhealthy: {str(e)}"
+    
+    # Check Postgres
+    try:
+        conn = get_pg_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        cursor.close()
+        conn.close()
+        health_status["postgres"] = "healthy"
+    except Exception as e:
+        health_status["postgres"] = f"unhealthy: {str(e)}"
+    
+    # Determine overall health
+    overall_healthy = all(
+        status == "healthy" or status.startswith("healthy")
+        for status in health_status.values()
+    )
+    
+    status_code = 200 if overall_healthy else 503
+    return JSONResponse(content=health_status, status_code=status_code)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
