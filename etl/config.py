@@ -46,3 +46,9 @@ def get_redis_url() -> str:
 KAFKA_BROKER = get_kafka_broker()
 POSTGRES_URL = get_postgres_url()
 REDIS_URL = get_redis_url()
+
+# TTC-specific envs
+GTFS_VEHICLE_URL = os.getenv("GTFS_VEHICLE_URL", "")
+GTFS_TRIPS_URL = os.getenv("GTFS_TRIPS_URL", "")
+KAFKA_TOPIC_VP = os.getenv("KAFKA_TOPIC_VP", "transit.ttc.vehicle_positions")
+KAFKA_TOPIC_TU = os.getenv("KAFKA_TOPIC_TU", "transit.ttc.trip_updates")

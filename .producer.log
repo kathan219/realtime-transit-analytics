@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "/Users/kathansoni/realtime-transit-analytics/realtime-transit-analytics/etl/producer.py", line 21, in <module>
-    from .config import KAFKA_BROKER
-ImportError: attempted relative import with no known parent package

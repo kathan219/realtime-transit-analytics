@@ -18,7 +18,7 @@ server = app.server
 ROUTES = ["504", "501", "505", "506", "509", "510", "511", "512"]
 
 app.layout = html.Div([
-    html.H2("Realtime Transit Analytics"),
+    html.H2("TTC Real-Time Delay Analytics"),
     html.Div([
         html.Label("Route"),
         dcc.Dropdown(
@@ -82,9 +82,18 @@ def fetch_insights():
 )
 def update_chart(route, source, _):
     if source.startswith("Hot"):
-        data = fetch_hot(route)
+        # TTC-specific endpoint
+        try:
+            resp = requests.get(f"{API_BASE}/hot/ttc/{route}", timeout=5)
+            data = resp.json() if resp.ok else []
+        except Exception:
+            data = []
     else:
-        data = fetch_history(route, 60)
+        try:
+            resp = requests.get(f"{API_BASE}/history/ttc/{route}", params={"minutes": 60}, timeout=5)
+            data = resp.json() if resp.ok else []
+        except Exception:
+            data = []
 
     if not data:
         return px.line(title="Delay (seconds)"), "No recent data for this route"

@@ -19,7 +19,7 @@ import psycopg2
 from kafka import KafkaConsumer
 from kafka.errors import KafkaError
 
-from .config import POSTGRES_URL
+from .config import POSTGRES_URL, KAFKA_TOPIC_VP, KAFKA_TOPIC_TU
 from .utils import get_kafka_consumer, get_pg_conn, get_redis
 from logging_setup import configure_logging
 
@@ -195,7 +195,7 @@ class WindowedAggregator:
                        ontime_pct: float, anomalies: int) -> None:
         """Store compact metrics in Redis with history limit."""
         try:
-            key = f"route:{route_id}"
+            key = f"route:ttc:{route_id}"
             metrics = {
                 "ts": ts.isoformat(),
                 "avg_delay_seconds": round(avg_delay, 1),
@@ -227,11 +227,22 @@ class WindowedAggregator:
         try:
             data = json.loads(message.value)
             route_id = data.get('route_id')
-            delay_seconds = data.get('delay_seconds')
-            event_ts_str = data.get('ts')
+            # Only use Trip Updates for delay metrics
+            feed = data.get('feed')
+            delay_seconds = data.get('delay_sec') if feed == 'trip_updates' else None
+            event_ts_str = data.get('ts') or data.get('observed_at')
             
-            if not route_id or not event_ts_str:
-                logger.warning(f"Skipping message with missing required fields: {data}")
+            # Skip vehicle positions without route_id, but process trip updates
+            if not event_ts_str:
+                logger.warning(f"Skipping message with missing timestamp: {data}")
+                return
+                
+            if feed == 'vehicle_positions' and not route_id:
+                logger.debug(f"Skipping vehicle position without route_id: {data.get('vehicle_id')}")
+                return
+                
+            if feed == 'trip_updates' and not route_id:
+                logger.warning(f"Skipping trip update without route_id: {data}")
                 return
             
             # Parse timestamp
@@ -245,7 +256,7 @@ class WindowedAggregator:
             
             # Add to appropriate window
             if delay_seconds is not None:
-                self._add_to_window(route_id, delay_seconds, event_ts)
+                self._add_to_window(route_id, {"delay_seconds": delay_seconds}, event_ts)
             
             # Check for windows that should be closed
             self._close_expired_windows(current_ts)
@@ -293,7 +304,9 @@ class WindowedAggregator:
     def start(self):
         """Start the consumer main loop."""
         try:
-            self.consumer = get_kafka_consumer('transit.raw', 'transit-consumers')
+            # Subscribe to TTC topics
+            self.consumer = get_kafka_consumer(KAFKA_TOPIC_VP, 'transit-consumers-ttc')
+            self.consumer.subscribe([KAFKA_TOPIC_VP, KAFKA_TOPIC_TU])
             self.pg_conn = get_pg_conn()
             self.redis_client = get_redis()
             self.running = True

@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "/Users/kathansoni/realtime-transit-analytics/realtime-transit-analytics/etl/consumer.py", line 22, in <module>
-    from .config import POSTGRES_URL
-ImportError: attempted relative import with no known parent package

@@ -159,6 +159,58 @@ async def get_top_late_routes(
     except Exception as e:
         logger.error(f"Error retrieving late routes: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+@app.get("/hot/ttc/{route_id}")
+async def get_hot_ttc(route_id: str) -> List[dict]:
+    try:
+        client = get_redis()
+        key = f"route:ttc:{route_id}"
+        raw = client.lrange(key, 0, -1)
+        return [json.loads(x) for x in raw]
+    except Exception as e:
+        logger.error(f"hot/ttc error: {e}")
+        return []
+
+
+@app.get("/history/ttc/{route_id}")
+async def get_history_ttc(route_id: str, minutes: int = Query(60, ge=1, le=1440)) -> List[dict]:
+    try:
+        conn = get_pg_conn()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT ts, avg_delay_seconds, ontime_pct, anomalies FROM agg_delay_minute WHERE route_id = %s AND ts >= NOW() - INTERVAL %s ORDER BY ts ASC",
+            (route_id, f"{minutes} minutes"),
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [
+            {"ts": ts.isoformat(), "avg_delay_seconds": float(ad) if ad is not None else None, "ontime_pct": float(ot) if ot is not None else None, "anomalies": int(anom) if anom is not None else 0}
+            for (ts, ad, ot, anom) in rows
+        ]
+    except Exception as e:
+        logger.error(f"history/ttc error: {e}")
+        return []
+
+
+@app.get("/top/late/ttc")
+async def top_late_ttc(minutes: int = Query(60, ge=1, le=1440), limit: int = Query(10, ge=1, le=100)) -> List[dict]:
+    try:
+        conn = get_pg_conn()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT route_id, AVG(avg_delay_seconds) as avg_delay, AVG(ontime_pct) as avg_ontime, COUNT(*) FROM agg_delay_minute WHERE ts >= NOW() - INTERVAL %s GROUP BY route_id ORDER BY avg_delay DESC LIMIT %s",
+            (f"{minutes} minutes", limit),
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [
+            {"route_id": r, "avg_delay_seconds": float(ad) if ad is not None else None, "avg_ontime_percentage": float(ot) if ot is not None else None, "data_points": int(c)}
+            for (r, ad, ot, c) in rows
+        ]
+    except Exception as e:
+        logger.error(f"top/late/ttc error: {e}")
+        return []
 
 
 @app.get("/history/{route_id}")

@@ -75,7 +75,7 @@ def get_kafka_consumer(topic: str, group_id: str) -> KafkaConsumer:
             enable_auto_commit=True,
             auto_commit_interval_ms=1000,
             session_timeout_ms=30000,
-            request_timeout_ms=30000,
+            request_timeout_ms=40000,
         )
         
         # Test connection by getting metadata

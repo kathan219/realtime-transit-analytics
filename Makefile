@@ -36,4 +36,7 @@ dash:
 streamlit:
 	streamlit run analytics/streamlit/app.py --server.port 8501 --server.address 0.0.0.0
 
+seed:
+	python scripts/seed_demo.py
+
 
