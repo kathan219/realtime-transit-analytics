@@ -19,8 +19,8 @@ import psycopg2
 from kafka import KafkaConsumer
 from kafka.errors import KafkaError
 
-from .config import POSTGRES_URL, KAFKA_TOPIC_VP, KAFKA_TOPIC_TU
-from .utils import get_kafka_consumer, get_pg_conn, get_redis
+from etl.config import POSTGRES_URL, KAFKA_TOPIC_VP, KAFKA_TOPIC_TU
+from etl.utils import get_kafka_consumer, get_pg_conn, get_redis
 from logging_setup import configure_logging
 
 logger = logging.getLogger(__name__)

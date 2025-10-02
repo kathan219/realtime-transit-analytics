@@ -10,7 +10,7 @@ from urllib.parse import quote_plus
 
 def get_kafka_broker() -> str:
     """Get Kafka broker URL from environment with default for local compose."""
-    return os.getenv("KAFKA_BROKER", "localhost:9092")
+    return os.getenv("KAFKA_BROKER", "localhost:9094")
 
 
 def get_postgres_config() -> dict:

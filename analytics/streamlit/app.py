@@ -14,7 +14,7 @@ ROUTES = ["504", "501", "505", "506", "509", "510", "511", "512"]
 @st.cache_data(ttl=10)
 def fetch_hot(route_id: str):
     try:
-        r = requests.get(f"{API_BASE}/hot/{route_id}", timeout=5)
+        r = requests.get(f"{API_BASE}/hot/ttc/{route_id}", timeout=5)
         if r.status_code == 404:
             return []
         r.raise_for_status()
@@ -26,7 +26,7 @@ def fetch_hot(route_id: str):
 @st.cache_data(ttl=10)
 def fetch_history(route_id: str, minutes: int = 60):
     try:
-        r = requests.get(f"{API_BASE}/history/{route_id}", params={"minutes": minutes}, timeout=5)
+        r = requests.get(f"{API_BASE}/history/ttc/{route_id}", params={"minutes": minutes}, timeout=5)
         if r.status_code == 404:
             return []
         r.raise_for_status()
@@ -68,7 +68,7 @@ def main():
     else:
         df = pd.DataFrame(data)
         if "ts" in df:
-            df["ts"] = pd.to_datetime(df["ts"])
+            df["ts"] = pd.to_datetime(df["ts"], format='ISO8601')
             df = df.sort_values("ts")
         if "avg_delay_seconds" in df:
             fig = px.line(df, x="ts", y="avg_delay_seconds", title="")

@@ -19,7 +19,7 @@ from typing import Dict, List, Optional
 import requests
 from google.transit import gtfs_realtime_pb2
 
-from .config import (
+from etl.config import (
     KAFKA_BROKER,
     GTFS_VEHICLE_URL,
     GTFS_TRIPS_URL,
@@ -27,7 +27,7 @@ from .config import (
     KAFKA_TOPIC_TU,
 )
 from logging_setup import configure_logging
-from .utils import get_kafka_producer
+from etl.utils import get_kafka_producer
 
 logger = logging.getLogger(__name__)
 

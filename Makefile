@@ -22,21 +22,21 @@ psql:
 	docker compose -f docker/docker-compose.yml exec -it postgres psql -U postgres -d transit
 
 producer:
-	python etl/producer.py
+	source .venv/bin/activate && python -m etl.producer
 
 consumer:
-	python etl/consumer.py
+	source .venv/bin/activate && python -m etl.consumer
 
 api:
-	uvicorn analytics.api.main:app --host 0.0.0.0 --port 8000 --reload
+	source .venv/bin/activate && uvicorn analytics.api.main:app --host 0.0.0.0 --port 8000 --reload
 
 dash:
-	python analytics/dash/app.py
+	source .venv/bin/activate && python analytics/dash/app.py
 
 streamlit:
-	streamlit run analytics/streamlit/app.py --server.port 8501 --server.address 0.0.0.0
+	source .venv/bin/activate && streamlit run analytics/streamlit/app.py --server.port 8501 --server.address 0.0.0.0
 
 seed:
-	python scripts/seed_demo.py
+	source .venv/bin/activate && python scripts/seed_demo.py
 
 
