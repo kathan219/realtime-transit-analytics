@@ -1,0 +1,47 @@
+2025-10-09 20:01:29,425 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9094 <connecting> [IPv6 ('::1', 9094, 0, 0)]>: connecting to localhost:9094 [('::1', 9094, 0, 0) IPv6]
+2025-10-09 20:01:29,550 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9094 <checking_api_versions_recv> [IPv6 ('::1', 9094, 0, 0)]>: Broker version identified as 2.6
+2025-10-09 20:01:29,550 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9094 <connected> [IPv6 ('::1', 9094, 0, 0)]>: Connection complete.
+2025-10-09 20:01:29,550 - kafka.consumer.subscription_state - INFO - Updating subscribed topics to: ('transit.ttc.vehicle_positions',)
+2025-10-09 20:01:29,550 - etl.utils - INFO - Connected to Kafka consumer for topic 'transit.ttc.vehicle_positions' in group 'transit-consumers-ttc'
+2025-10-09 20:01:29,550 - kafka.consumer.subscription_state - INFO - Updating subscribed topics to: ['transit.ttc.vehicle_positions', 'transit.ttc.trip_updates']
+2025-10-09 20:01:29,681 - etl.utils - INFO - Connected to Postgres database
+2025-10-09 20:01:29,687 - etl.utils - INFO - Connected to Redis at redis://localhost:6379/0
+2025-10-09 20:01:29,687 - __main__ - INFO - Starting transit consumer...
+2025-10-09 20:01:29,820 - kafka.cluster - WARNING - Topic transit.ttc.trip_updates is not available during auto-create initialization
+2025-10-09 20:01:29,821 - kafka.cluster - WARNING - Topic transit.ttc.vehicle_positions is not available during auto-create initialization
+2025-10-09 20:01:29,821 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=1001 host=localhost:9094 <connecting> [IPv6 ('::1', 9094, 0, 0)]>: connecting to localhost:9094 [('::1', 9094, 0, 0) IPv6]
+2025-10-09 20:01:29,932 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=1001 host=localhost:9094 <connected> [IPv6 ('::1', 9094, 0, 0)]>: Connection complete.
+2025-10-09 20:01:29,932 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9094 <connected> [IPv6 ('::1', 9094, 0, 0)]>: Closing connection. 
+2025-10-09 20:01:30,484 - kafka.cluster - INFO - Coordinator for group/transit-consumers-ttc is BrokerMetadata(nodeId='coordinator-1001', host='localhost', port=9094, rack=None)
+2025-10-09 20:01:30,484 - kafka.coordinator - INFO - Discovered coordinator coordinator-1001 for group transit-consumers-ttc
+2025-10-09 20:01:30,484 - kafka.coordinator.heartbeat - INFO - Starting new heartbeat thread
+2025-10-09 20:01:30,484 - kafka.coordinator.consumer - INFO - Revoking previously assigned partitions set() for group transit-consumers-ttc
+2025-10-09 20:01:30,484 - kafka.coordinator - INFO - Failed to join group transit-consumers-ttc: NodeNotReadyError: coordinator-1001
+2025-10-09 20:01:30,485 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-1001 host=localhost:9094 <connecting> [IPv6 ('::1', 9094, 0, 0)]>: connecting to localhost:9094 [('::1', 9094, 0, 0) IPv6]
+2025-10-09 20:01:30,588 - kafka.coordinator - INFO - Failed to join group transit-consumers-ttc: NodeNotReadyError: coordinator-1001
+2025-10-09 20:01:30,589 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-1001 host=localhost:9094 <connected> [IPv6 ('::1', 9094, 0, 0)]>: Connection complete.
+2025-10-09 20:01:30,690 - kafka.coordinator - INFO - (Re-)joining group transit-consumers-ttc
+2025-10-09 20:01:30,734 - kafka.coordinator - INFO - Received member id kafka-python-2.2.15-b3b1b534-7c1a-473a-882c-f0e5f249f2a7 for group transit-consumers-ttc; will retry join-group
+2025-10-09 20:01:30,735 - kafka.coordinator - INFO - Failed to join group transit-consumers-ttc: [Error 79] MemberIdRequiredError
+2025-10-09 20:01:30,735 - kafka.coordinator - INFO - (Re-)joining group transit-consumers-ttc
+2025-10-09 20:01:33,786 - kafka.coordinator - INFO - Successfully joined group transit-consumers-ttc <Generation 1 (member_id: kafka-python-2.2.15-b3b1b534-7c1a-473a-882c-f0e5f249f2a7, protocol: range)>
+2025-10-09 20:01:33,787 - kafka.coordinator - INFO - Elected group leader -- performing partition assignments using range
+2025-10-09 20:01:33,787 - kafka.coordinator.assignors.range - WARNING - No partition metadata for topic transit.ttc.trip_updates
+2025-10-09 20:01:33,787 - kafka.coordinator.assignors.range - WARNING - No partition metadata for topic transit.ttc.vehicle_positions
+2025-10-09 20:01:33,838 - kafka.consumer.subscription_state - INFO - Updated partition assignment: []
+2025-10-09 20:01:33,838 - kafka.coordinator.consumer - INFO - Setting newly assigned partitions set() for group transit-consumers-ttc
+2025-10-09 20:01:34,838 - kafka.coordinator.consumer - INFO - Revoking previously assigned partitions set() for group transit-consumers-ttc
+2025-10-09 20:01:34,839 - kafka.coordinator - INFO - (Re-)joining group transit-consumers-ttc
+2025-10-09 20:01:34,854 - kafka.coordinator - INFO - Successfully joined group transit-consumers-ttc <Generation 2 (member_id: kafka-python-2.2.15-b3b1b534-7c1a-473a-882c-f0e5f249f2a7, protocol: range)>
+2025-10-09 20:01:34,854 - kafka.coordinator - INFO - Elected group leader -- performing partition assignments using range
+2025-10-09 20:01:34,865 - kafka.consumer.subscription_state - INFO - Updated partition assignment: [TopicPartition(topic='transit.ttc.trip_updates', partition=0), TopicPartition(topic='transit.ttc.vehicle_positions', partition=0)]
+2025-10-09 20:01:34,865 - kafka.coordinator.consumer - INFO - Setting newly assigned partitions {TopicPartition(topic='transit.ttc.vehicle_positions', partition=0), TopicPartition(topic='transit.ttc.trip_updates', partition=0)} for group transit-consumers-ttc
+2025-10-09 20:01:34,885 - kafka.consumer.fetcher - INFO - Resetting offset for partition TopicPartition(topic='transit.ttc.vehicle_positions', partition=0) to offset 0.
+2025-10-09 20:01:34,885 - kafka.consumer.fetcher - INFO - Resetting offset for partition TopicPartition(topic='transit.ttc.trip_updates', partition=0) to offset 0.
+2025-10-09 20:09:20,072 - kafka.coordinator.heartbeat - WARNING - Heartbeat failed for group transit-consumers-ttc because it is rebalancing
+2025-10-09 20:09:20,080 - kafka.coordinator.consumer - INFO - Revoking previously assigned partitions {TopicPartition(topic='transit.ttc.vehicle_positions', partition=0), TopicPartition(topic='transit.ttc.trip_updates', partition=0)} for group transit-consumers-ttc
+2025-10-09 20:09:20,081 - kafka.coordinator - INFO - (Re-)joining group transit-consumers-ttc
+2025-10-09 20:09:20,089 - kafka.coordinator - INFO - Successfully joined group transit-consumers-ttc <Generation 3 (member_id: kafka-python-2.2.15-b3b1b534-7c1a-473a-882c-f0e5f249f2a7, protocol: range)>
+2025-10-09 20:09:20,089 - kafka.coordinator - INFO - Elected group leader -- performing partition assignments using range
+2025-10-09 20:09:20,098 - kafka.consumer.subscription_state - INFO - Updated partition assignment: []
+2025-10-09 20:09:20,098 - kafka.coordinator.consumer - INFO - Setting newly assigned partitions set() for group transit-consumers-ttc
