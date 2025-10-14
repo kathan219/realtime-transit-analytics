@@ -8,7 +8,20 @@ import streamlit as st
 
 
 API_BASE = os.getenv("ANALYTICS_API_BASE", "http://localhost:8000")
-ROUTES = ["504", "501", "505", "506", "509", "510", "511", "512"]
+
+# Enhanced TTC route information with directions
+TTC_ROUTES = {
+    "504": {"name": "King", "description": "King St West ↔ Downtown", "directions": ["inbound", "outbound"]},
+    "501": {"name": "Queen", "description": "Queen St East ↔ West", "directions": ["inbound", "outbound"]},
+    "505": {"name": "Dundas", "description": "Dundas St West ↔ Downtown", "directions": ["inbound", "outbound"]},
+    "506": {"name": "Carlton", "description": "Carlton St ↔ Downtown", "directions": ["inbound", "outbound"]},
+    "509": {"name": "Harbourfront", "description": "Harbourfront ↔ Union Station", "directions": ["inbound", "outbound"]},
+    "510": {"name": "Spadina", "description": "Spadina Ave ↔ Union Station", "directions": ["inbound", "outbound"]},
+    "511": {"name": "Bathurst", "description": "Bathurst St ↔ Downtown", "directions": ["inbound", "outbound"]},
+    "512": {"name": "St. Clair", "description": "St. Clair Ave ↔ Downtown", "directions": ["inbound", "outbound"]},
+}
+
+ROUTES = list(TTC_ROUTES.keys())
 
 
 @st.cache_data(ttl=10)
@@ -46,14 +59,38 @@ def fetch_insights():
 
 
 def main():
-    st.set_page_config(page_title="Realtime Transit Analytics", layout="wide")
-    st.title("Realtime Transit Analytics")
+    st.set_page_config(page_title="TTC Real-Time Analytics", layout="wide")
+    st.title("🚌 TTC Real-Time Delay Analytics")
 
-    col1, col2, col3 = st.columns([2, 3, 5])
+    # Control Panel
+    col1, col2, col3, col4 = st.columns([2, 2, 2, 4])
+    
     with col1:
-        route = st.selectbox("Route", ROUTES, index=ROUTES.index("504") if "504" in ROUTES else 0)
+        route = st.selectbox(
+            "Route", 
+            ROUTES, 
+            index=ROUTES.index("504") if "504" in ROUTES else 0,
+            format_func=lambda x: f"{x} - {TTC_ROUTES[x]['name']}"
+        )
+    
     with col2:
-        source = st.radio("Source", ["Hot (Redis)", "History (Postgres)"], horizontal=True)
+        direction = st.radio(
+            "Direction",
+            ["Both", "Inbound (→ Downtown)", "Outbound (← Suburbs)"],
+            index=0,
+            key="direction_radio"
+        )
+        direction_value = "both" if direction == "Both" else direction.split()[0].lower()
+    
+    with col3:
+        source = st.radio("Data Source", ["Hot (Redis)", "History (Postgres)"], horizontal=True)
+
+    # Route Information Banner
+    route_data = TTC_ROUTES.get(route, {})
+    route_name = route_data.get("name", "Unknown")
+    route_desc = route_data.get("description", "Route information unavailable")
+    
+    st.info(f"**Route {route} - {route_name}**: {route_desc} | **Direction**: {direction}")
 
     # Fetch data
     if source.startswith("Hot"):
@@ -62,7 +99,12 @@ def main():
         data = fetch_history(route, 60)
 
     # Chart section
-    st.subheader("Delay (seconds)")
+    chart_title = f"Route {route} - {route_name} Delay (seconds)"
+    if direction != "Both":
+        chart_title += f" - {direction.split()[0]}"
+    
+    st.subheader(chart_title)
+    
     if not data:
         st.info("No recent data for this route. Hot metrics need ~60s for the first window to close. Try History for route 504 (seeded).")
     else:
@@ -70,15 +112,34 @@ def main():
         if "ts" in df:
             df["ts"] = pd.to_datetime(df["ts"], format='ISO8601')
             df = df.sort_values("ts")
+        
         if "avg_delay_seconds" in df:
-            fig = px.line(df, x="ts", y="avg_delay_seconds", title="")
-            fig.update_layout(margin=dict(l=10, r=10, t=10, b=10))
-            st.plotly_chart(fig, use_container_width=True)
+            # Filter by direction if specified
+            if direction_value != "both" and "direction" in df.columns:
+                df = df[df["direction"] == direction_value]
+                if df.empty:
+                    st.warning(f"No data available for {direction} direction")
+                else:
+                    fig = px.line(df, x="ts", y="avg_delay_seconds", title="")
+                    fig.update_layout(
+                        margin=dict(l=10, r=10, t=10, b=10),
+                        xaxis_title="Time",
+                        yaxis_title="Delay (seconds)"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                fig = px.line(df, x="ts", y="avg_delay_seconds", title="")
+                fig.update_layout(
+                    margin=dict(l=10, r=10, t=10, b=10),
+                    xaxis_title="Time",
+                    yaxis_title="Delay (seconds)"
+                )
+                st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No recent data for this route.")
 
     # Insights panel
-    st.subheader("Insights (last 60 min)")
+    st.subheader("🤖 AI Insights (last 60 min)")
     insights = fetch_insights()
     highlights = insights.get("highlights") or []
     if not highlights:
@@ -89,7 +150,7 @@ def main():
             issue = h.get("issue", "")
             severity = h.get("severity", "")
             evidence = h.get("evidence", "")
-            st.markdown(f"- [{severity}] Route {route_txt}: {issue} — {evidence}")
+            st.markdown(f"- **[{severity}]** Route {route_txt}: {issue} — {evidence}")
 
 
 if __name__ == "__main__":
