@@ -95,6 +95,7 @@ python ai/insights.py
 
 ## 📊 Dashboards
 
+### Web Dashboards
 - **Dash**: http://localhost:8050
 - **Streamlit**: http://localhost:8501
 
@@ -103,6 +104,24 @@ Features:
 - Hot metrics (Redis) vs Historical data (Postgres)
 - Real-time delay charts
 - AI insights panel
+
+### Mobile App (React Native)
+- **Location**: `mobile/` directory
+- **Setup**: See `mobile/README.md` for detailed instructions
+
+Quick start:
+```bash
+cd mobile
+npm install
+npm start
+```
+
+Features:
+- Cross-platform (iOS, Android, Web)
+- Route selection and direction filtering
+- Real-time delay and on-time percentage charts
+- Auto-refresh every 15 seconds
+- Pull-to-refresh
 
 ## 🔌 API Endpoints
 
@@ -158,6 +177,10 @@ make seed        # Seed demo data
 │   ├── api/              # FastAPI endpoints
 │   ├── dash/             # Dash web app
 │   └── streamlit/        # Streamlit web app
+├── mobile/               # React Native mobile app
+│   ├── components/       # UI components
+│   ├── services/         # API service layer
+│   └── config/           # App configuration
 ├── db/                   # Database schema and seeds
 ├── docker/               # Docker Compose configuration
 ├── etl/                  # Data pipeline
